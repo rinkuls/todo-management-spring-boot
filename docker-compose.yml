@@ -1,0 +1,19 @@
+version: "3"
+
+services:
+
+  app:
+    build:
+      context: "./"
+      dockerfile: Dockerfile
+    container_name: 'DB-Application'
+
+
+    ports:
+      - '8080:8080'
+    networks:
+      - my-proxy-net
+networks:
+  my-proxy-net:
+    external:
+      name: custom_network
