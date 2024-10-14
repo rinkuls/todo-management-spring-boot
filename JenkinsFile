@@ -17,36 +17,33 @@ node {
 
         // Build Docker image
         stage('Build Docker') {
+            // Set Docker environment to Minikube based on the operating system
             if (isUnix()) {
-                sh 'eval $(minikube docker-env)' // For Linux/macOS
+                // For Linux/macOS
+                sh 'eval $(minikube docker-env)' // Configure Docker CLI to use Minikube
             } else {
+                // For Windows (CMD)
                 bat '''
                 @echo off
                 FOR /F "tokens=*" %%i IN ('minikube docker-env --shell cmd') DO @call %%i
                 '''
             }
+
             echo "Docker Image Tag Name: ${dockerImageTag}"
-            dockerImage = docker.build(dockerImageTag) // Building with the specific tag
+            // Build the Docker image with the specific tag
+            dockerImage = docker.build(dockerImageTag)
         }
 
-        // Push to Minikube
+        // Push to Minikube (this might be redundant if built in Minikube context)
         stage('Push to Minikube') {
-            if (isUnix()) {
-                sh 'eval $(minikube docker-env)' // For Linux/macOS
-            } else {
-                bat '''
-                @echo off
-                FOR /F "tokens=*" %%i IN ('minikube docker-env --shell cmd') DO @call %%i
-                '''
-            }
-
-            echo 'Tagging and pushing the Docker image to Minikube...'
-            bat "docker tag ${dockerImageTag} ${dockerImageTag}" // Use the tagged image name
+            // For clarity, we can skip this stage as the image is already built in Minikube's context
+            echo 'Image is already built in Minikube context.'
         }
 
         // Deploy to Kubernetes
         stage('kubectl deploy') {
             echo 'Deploying to Kubernetes...'
+            // Apply the deployment and service configuration files
             bat 'kubectl apply -f app-deployment.yaml'
             bat 'kubectl apply -f app-service.yaml'
         }
@@ -65,11 +62,8 @@ node {
 
 def notifyBuild(String buildStatus = 'STARTED') {
     buildStatus = buildStatus ?: 'SUCCESSFUL'
-    def colorName = 'RED'
-    def colorCode = '#FF0000'
     def now = new Date()
     def subject = "${buildStatus}, Job: ${env.JOB_NAME} FRONTEND - Deployment Sequence: [${env.BUILD_NUMBER}] "
-    def summary = "${subject} - Check On: (${env.BUILD_URL}) - Time: ${now}"
     def subject_email = "Spring Boot Deployment"
     def details = """<p>${buildStatus} JOB </p>
     <p>Job: ${env.JOB_NAME} - Deployment Sequence: [${env.BUILD_NUMBER}] - Time: ${now}</p>

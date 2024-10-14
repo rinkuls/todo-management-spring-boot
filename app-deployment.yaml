@@ -23,12 +23,11 @@ spec:
         io.kompose.service: todo-management-spring-boot  # Updated label
     spec:
       containers:
-        - image: todo-management-spring-boot:latest  # Updated image
+        - image: todo-management-spring-boot:${BUILD_NUMBER}  # Updated image with build number
           name: todo-management-spring-boot  # Updated container name for consistency
           ports:
             - containerPort: 8780
-              hostPort: 8780
               protocol: TCP
-          resources: {}
+          resources: {}  # Resource requests and limits can be specified here if needed
       restartPolicy: Always
 status: {}

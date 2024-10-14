@@ -8,10 +8,12 @@ metadata:
     io.kompose.service: todo-management-spring-boot  # Updated label
   name: todo-management-spring-boot  # Updated name
 spec:
+  type: NodePort  # Changed to NodePort to allow external access
   ports:
     - name: "http"  # Updated name for clarity
       port: 8780
       targetPort: 8780
+      nodePort: 30001  # Optional: specify a NodePort for external access
   selector:
     io.kompose.service: todo-management-spring-boot  # Updated selector
 status:
