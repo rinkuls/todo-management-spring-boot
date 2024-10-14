@@ -16,14 +16,20 @@ node {
         stage('Build') {
             bat "mvn clean install"
         }
-        stage('Docker Compose Up') {
-             bat 'docker --version'
-            bat  "docker stop DB-Application || true"
-            bat  " docker rm DB-Application || true"
-            echo "removed successful"
-            bat  "docker-compose -f docker-compose.yml up -d"
-            echo "composed successful"
-        }
+
+         stage('Build docker image') {
+                         dockerImage = docker.build("todo-management-spring-boot:${env.BUILD_NUMBER}")
+                  }
+
+                  stage('Deploy docker'){
+                          echo "Docker Image Tag Name: ${dockerImageTag}"
+                          bat  "docker stop DB-Application || true"
+                          bat  " docker rm DB-Application || true"
+                          echo "removed successful"
+                          bat  "docker run --name DB-Application -d -p 8781:8781 DB-Application:${env.BUILD_NUMBER}"
+                           echo "run successful"
+                  }
+
 
 
     }catch(e){
