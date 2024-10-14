@@ -31,13 +31,12 @@ node {
 
             echo "Docker Image Tag Name: ${dockerImageTag}"
             // Build the Docker image with the specific tag
-            dockerImage = docker.build(dockerImageTag)
-        }
+            def dockerImage = docker.build(dockerImageTag)
 
-        // Push to Minikube (this might be redundant if built in Minikube context)
-        stage('Push to Minikube') {
-            // For clarity, we can skip this stage as the image is already built in Minikube's context
-            echo 'Image is already built in Minikube context.'
+            // Verify the image is built correctly
+            echo "Checking available Docker images in Minikube..."
+
+            bat 'docker images' // For Windows
         }
 
         // Deploy to Kubernetes
