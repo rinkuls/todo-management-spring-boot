@@ -57,7 +57,9 @@ node {
                                          '''
                                   }
  echo 'done else'
-                bat "docker tag todo-management-spring-boot:${env.BUILD_NUMBER}:latest todo-management-spring-boot:${env.BUILD_NUMBER}:latest"
+  bat "docker tag todo-management-spring-boot:${env.BUILD_NUMBER} todo-management-spring-boot:latest"
+
+ // bat "docker tag todo-management-spring-boot:${env.BUILD_NUMBER}:latest todo-management-spring-boot:${env.BUILD_NUMBER}:latest"
 
         }
 
