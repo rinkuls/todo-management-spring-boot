@@ -1,7 +1,8 @@
 node {
     def WORKSPACE = "/var/lib/jenkins/workspace/todo-management-spring-boot"
     // Ensure BUILD_NUMBER is available and set a default if not
-    def buildNumber = env.BUILD_NUMBER ?: '0'
+    def buildNumber =  "latest"
+     //def buildNumber = env.BUILD_NUMBER ?: '0'
     def dockerImageTag = "todo-management-spring-boot:${buildNumber}"
 
     try {
