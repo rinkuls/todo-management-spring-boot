@@ -21,14 +21,17 @@ node {
                          dockerImage = docker.build("todo-management-spring-boot:${env.BUILD_NUMBER}")
                   }
 
-      stage('Deploy docker'){
-            echo "Docker Image Tag Name: ${dockerImageTag}"
-            bat  "docker stop db-application || true"
-            bat  " docker rm db-application || true"
-            echo "removed successful"
-            bat  "docker run --name db-application -d -p 8781:8781 todo-management-spring-boot:${env.BUILD_NUMBER}"
-            echo "run successful"
-      }
+  /*
+          stage('Deploy docker'){
+                   echo "Docker Image Tag Name: ${dockerImageTag}"
+                   bat  "docker stop db-application || true"
+                   bat  " docker rm db-application || true"
+                   echo "removed successful"
+                   bat  "docker run --name db-application -d -p 8781:8781 todo-management-spring-boot:${env.BUILD_NUMBER}"
+                   echo "run successful"
+             }*/
+
+
         /* can we used directly this stage and skip build and deploy separately but for learning purpose i did this
          stage('Docker Compose Up') {
                 bat 'docker --version'
@@ -38,8 +41,22 @@ node {
                bat  "docker-compose -f docker-compose.yml up -d"
                echo "composed successful"
            } */
+        stage('Push to Minikube') {
 
+        // Tag and push the Docker image to Minikube's Docker daemon
+                bat 'eval $(minikube docker-env)' // Set Docker environment to Minikube
+                bat "docker tag todo-management-spring-boot:${env.BUILD_NUMBER}:latest todo-management-spring-boot:${env.BUILD_NUMBER}:latest"
 
+        }
+
+        stage('kubectl deploy') {
+
+        // Deploy the Docker image to Minikube using kubectl
+                bat 'kubectl apply -f app-deployment.yaml' // Adjust path as needed
+                bat 'kubectl apply -f app-service.yaml' // Adjust path as needed
+
+        }
+ echo 'Deployment to Minikube was successful!'
     }catch(e){
         echo "in catch"
         currentBuild.result = "FAILED"
