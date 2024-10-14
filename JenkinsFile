@@ -1,6 +1,8 @@
 node {
     def WORKSPACE = "/var/lib/jenkins/workspace/todo-management-spring-boot"
-    def dockerImageTag = "todo-management-spring-boot:${env.BUILD_NUMBER}"
+    // Ensure BUILD_NUMBER is available and set a default if not
+    def buildNumber = env.BUILD_NUMBER ?: '0'
+    def dockerImageTag = "todo-management-spring-boot:${buildNumber}"
 
     try {
         // Stage to clone the repository
@@ -29,14 +31,42 @@ node {
                 '''
             }
 
+            // Verify if the Docker environment is set correctly
+            echo "Current Docker context:"
+            if (isUnix()) {
+                sh 'docker context ls'
+            } else {
+                bat 'docker context ls'
+            }
+
             echo "Docker Image Tag Name: ${dockerImageTag}"
+
             // Build the Docker image with the specific tag
             def dockerImage = docker.build(dockerImageTag)
 
             // Verify the image is built correctly
             echo "Checking available Docker images in Minikube..."
+            if (isUnix()) {
+                sh 'docker images' // For Unix-based systems
+            } else {
+                bat 'docker images' // For Windows
+            }
+        }
 
-            bat 'docker images' // For Windows
+        // Verify if image exists before deploying
+        stage('Verify Image') {
+            echo 'Verifying if Docker image exists in Minikube...'
+            if (isUnix()) {
+                def imageCheck = sh(script: "docker images -q ${dockerImageTag}", returnStdout: true).trim()
+                if (!imageCheck) {
+                    error "Docker image ${dockerImageTag} not found in Minikube!"
+                }
+            } else {
+                def imageCheck = bat(script: "docker images -q ${dockerImageTag}", returnStdout: true).trim()
+                if (!imageCheck) {
+                    error "Docker image ${dockerImageTag} not found in Minikube!"
+                }
+            }
         }
 
         // Deploy to Kubernetes
