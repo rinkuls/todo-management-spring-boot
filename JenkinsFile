@@ -26,7 +26,7 @@ node {
              // bat  "docker stop db-application || true"
               //bat  " docker rm db-application || true"
               echo "removed successful"
-              bat  "docker run --name db-application -d -p 8781:8781 db-application:${env.BUILD_NUMBER}"
+              bat  "docker run --name db-application -d -p 8781:8781 todo-management-spring-boot:${env.BUILD_NUMBER}"
                echo "run successful"
       }
 
