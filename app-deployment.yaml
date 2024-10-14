@@ -15,9 +15,6 @@ spec:
   strategy: {}
   template:
     metadata:
-      annotations:
-        kompose.cmd: kompose convert
-        kompose.version: 1.31.2 (a92241f79)
       labels:
         io.kompose.network/custom-network: "true"
         io.kompose.service: todo-management-spring-boot  # Updated label
@@ -30,4 +27,3 @@ spec:
               protocol: TCP
           resources: {}  # Resource requests and limits can be specified here if needed
       restartPolicy: Always
-status: {}
