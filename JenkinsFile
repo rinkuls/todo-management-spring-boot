@@ -44,7 +44,14 @@ node {
         stage('Push to Minikube') {
 
         // Tag and push the Docker image to Minikube's Docker daemon
-                bat 'eval $(minikube docker-env)' // Set Docker environment to Minikube
+                if (isUnix()) {
+                // For Linux/macOS
+                sh 'eval $(minikube docker-env)' // Configure Docker CLI to use Minikube
+                } else {
+                // For Windows (PowerShell)
+                bat 'minikube docker-env | Invoke-Expression' // PowerShell equivalent
+                }
+
                 bat "docker tag todo-management-spring-boot:${env.BUILD_NUMBER}:latest todo-management-spring-boot:${env.BUILD_NUMBER}:latest"
 
         }
