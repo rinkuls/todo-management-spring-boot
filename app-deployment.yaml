@@ -22,6 +22,7 @@ spec:
       containers:
         - image: todo-management-spring-boot:latest  # Updated image with build number
           name: todo-management-spring-boot  # Updated container name for consistency
+          imagePullPolicy: Never
           ports:
             - containerPort: 8780
               protocol: TCP
