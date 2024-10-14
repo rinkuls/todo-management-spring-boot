@@ -16,12 +16,35 @@ node {
         stage('Build') {
             bat "mvn clean install"
         }
+         stage('Build docker') {
 
-         stage('Build docker image') {
-                         dockerImage = docker.build("todo-management-spring-boot:${env.BUILD_NUMBER}")
-                  }
 
-  /*
+                            // Set Docker environment to Minikube based on the operating system
+                            if (isUnix()) {
+                                // For Linux/macOS
+                                sh 'eval $(minikube docker-env)' // Configure Docker CLI to use Minikube
+                            } else {
+                                // For Windows (CMD)
+                                bat '''
+                                @echo off
+                                FOR /F "tokens=*" %%i IN ('minikube docker-env --shell cmd') DO @call %%i
+                                '''
+                            }
+         echo "Docker Image Tag Name: ${dockerImageTag}"
+                            // Build the Docker image with Minikube environment
+                            dockerImage = docker.build("todo-management-spring-boot:latest")
+
+
+                }
+
+  /* here main benifit with k8s is we dont need to stop and remove container
+           stage('Build docker image') {
+                                   dockerImage = docker.build("todo-management-spring-boot:${env.BUILD_NUMBER}")
+                            }*/
+
+
+
+  /* here main benifit with k8s is we dont need to stop and remove container
           stage('Deploy docker'){
                    echo "Docker Image Tag Name: ${dockerImageTag}"
                    bat  "docker stop db-application || true"
@@ -57,7 +80,7 @@ node {
                                          '''
                                   }
  echo 'done else'
-  bat "docker tag todo-management-spring-boot:${env.BUILD_NUMBER} todo-management-spring-boot:latest"
+  bat "docker tag todo-management-spring-boot:latest todo-management-spring-boot:latest"
 
  // bat "docker tag todo-management-spring-boot:${env.BUILD_NUMBER}:latest todo-management-spring-boot:${env.BUILD_NUMBER}:latest"
 
