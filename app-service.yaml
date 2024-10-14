@@ -4,16 +4,15 @@ metadata:
   annotations:
     kompose.cmd: kompose convert
     kompose.version: 1.31.2 (a92241f79)
-  creationTimestamp: null
   labels:
-    io.kompose.service: app
-  name: app
+    io.kompose.service: todo-management-spring-boot  # Updated label
+  name: todo-management-spring-boot  # Updated name
 spec:
   ports:
-    - name: "8780"
+    - name: "http"  # Updated name for clarity
       port: 8780
       targetPort: 8780
   selector:
-    io.kompose.service: app
+    io.kompose.service: todo-management-spring-boot  # Updated selector
 status:
   loadBalancer: {}
