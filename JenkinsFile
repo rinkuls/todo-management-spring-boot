@@ -22,14 +22,22 @@ node {
                   }
 
       stage('Deploy docker'){
-              echo "Docker Image Tag Name: ${dockerImageTag}"
-             // bat  "docker stop db-application || true"
-              //bat  " docker rm db-application || true"
-              echo "removed successful"
-              bat  "docker run --name db-application -d -p 8781:8781 todo-management-spring-boot:${env.BUILD_NUMBER}"
-               echo "run successful"
+            echo "Docker Image Tag Name: ${dockerImageTag}"
+            bat  "docker stop db-application || true"
+            bat  " docker rm db-application || true"
+            echo "removed successful"
+            bat  "docker run --name db-application -d -p 8781:8781 todo-management-spring-boot:${env.BUILD_NUMBER}"
+            echo "run successful"
       }
-
+        /* can we used directly this stage and skip build and deploy separately but for learning purpose i did this
+         stage('Docker Compose Up') {
+                bat 'docker --version'
+               bat  "docker stop DB-Application || true"
+               bat  " docker rm DB-Application || true"
+               echo "removed successful"
+               bat  "docker-compose -f docker-compose.yml up -d"
+               echo "composed successful"
+           } */
 
 
     }catch(e){
