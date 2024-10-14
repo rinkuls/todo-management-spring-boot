@@ -4,7 +4,6 @@ metadata:
   annotations:
     kompose.cmd: kompose convert
     kompose.version: 1.31.2 (a92241f79)
-  creationTimestamp: null
   labels:
     io.kompose.service: todo-management-spring-boot  # Updated label
   name: todo-management-spring-boot  # Updated name
@@ -19,14 +18,13 @@ spec:
       annotations:
         kompose.cmd: kompose convert
         kompose.version: 1.31.2 (a92241f79)
-      creationTimestamp: null
       labels:
         io.kompose.network/custom-network: "true"
         io.kompose.service: todo-management-spring-boot  # Updated label
     spec:
       containers:
         - image: todo-management-spring-boot:latest  # Updated image
-          name: db-application
+          name: todo-management-spring-boot  # Updated container name for consistency
           ports:
             - containerPort: 8780
               hostPort: 8780

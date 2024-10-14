@@ -1,133 +1,84 @@
 node {
     def WORKSPACE = "/var/lib/jenkins/workspace/todo-management-spring-boot"
-    def dockerImageTag = "todo-management-spring-boot${env.BUILD_NUMBER}"
+    def dockerImageTag = "todo-management-spring-boot:${env.BUILD_NUMBER}"
 
-    try{
-
-        //notifyBuild('STARTED')
+    try {
+        // Stage to clone the repository
         stage('Clone Repo') {
-            // for display purposes
-            // Get some code from a GitHub repository
-
             git url: 'https://github.com/rinkuls/todo-management-spring-boot.git',
-                    credentialsId: 'springdeploy-user',
-                    branch: 'main'
+                credentialsId: 'springdeploy-user',
+                branch: 'main'
         }
+
+        // Build the application
         stage('Build') {
             bat "mvn clean install"
         }
-         stage('Build docker') {
 
+        // Build Docker image
+        stage('Build Docker') {
+            if (isUnix()) {
+                sh 'eval $(minikube docker-env)' // For Linux/macOS
+            } else {
+                bat '''
+                @echo off
+                FOR /F "tokens=*" %%i IN ('minikube docker-env --shell cmd') DO @call %%i
+                '''
+            }
+            echo "Docker Image Tag Name: ${dockerImageTag}"
+            dockerImage = docker.build(dockerImageTag) // Building with the specific tag
+        }
 
-                            // Set Docker environment to Minikube based on the operating system
-                            if (isUnix()) {
-                                // For Linux/macOS
-                                sh 'eval $(minikube docker-env)' // Configure Docker CLI to use Minikube
-                            } else {
-                                // For Windows (CMD)
-                                bat '''
-                                @echo off
-                                FOR /F "tokens=*" %%i IN ('minikube docker-env --shell cmd') DO @call %%i
-                                '''
-                            }
-         echo "Docker Image Tag Name: ${dockerImageTag}"
-                            // Build the Docker image with Minikube environment
-                            dockerImage = docker.build("todo-management-spring-boot:latest")
-
-
-                }
-
-  /* here main benifit with k8s is we dont need to stop and remove container
-           stage('Build docker image') {
-                                   dockerImage = docker.build("todo-management-spring-boot:${env.BUILD_NUMBER}")
-                            }*/
-
-
-
-  /* here main benifit with k8s is we dont need to stop and remove container
-          stage('Deploy docker'){
-                   echo "Docker Image Tag Name: ${dockerImageTag}"
-                   bat  "docker stop db-application || true"
-                   bat  " docker rm db-application || true"
-                   echo "removed successful"
-                   bat  "docker run --name db-application -d -p 8781:8781 todo-management-spring-boot:${env.BUILD_NUMBER}"
-                   echo "run successful"
-             }*/
-
-
-        /* can we used directly this stage and skip build and deploy separately but for learning purpose i did this
-         stage('Docker Compose Up') {
-                bat 'docker --version'
-               bat  "docker stop DB-Application || true"
-               bat  " docker rm DB-Application || true"
-               echo "removed successful"
-               bat  "docker-compose -f docker-compose.yml up -d"
-               echo "composed successful"
-           } */
+        // Push to Minikube
         stage('Push to Minikube') {
+            if (isUnix()) {
+                sh 'eval $(minikube docker-env)' // For Linux/macOS
+            } else {
+                bat '''
+                @echo off
+                FOR /F "tokens=*" %%i IN ('minikube docker-env --shell cmd') DO @call %%i
+                '''
+            }
 
-        // Tag and push the Docker image to Minikube's Docker daemon
-                if (isUnix()) {
-                // For Linux/macOS
-                sh 'eval $(minikube docker-env)' // Configure Docker CLI to use Minikube
-                } else {
-                 echo 'in else'
-                // For Windows (PowerShell)
-                   // For Windows (CMD)
-                                         bat '''
-                                         @echo off
-                                         FOR /F "tokens=*" %%i IN ('minikube docker-env --shell cmd') DO @call %%i
-                                         '''
-                                  }
- echo 'done else'
-  bat "docker tag todo-management-spring-boot:latest todo-management-spring-boot:latest"
-
- // bat "docker tag todo-management-spring-boot:${env.BUILD_NUMBER}:latest todo-management-spring-boot:${env.BUILD_NUMBER}:latest"
-
+            echo 'Tagging and pushing the Docker image to Minikube...'
+            bat "docker tag ${dockerImageTag} ${dockerImageTag}" // Use the tagged image name
         }
 
+        // Deploy to Kubernetes
         stage('kubectl deploy') {
-
-        // Deploy the Docker image to Minikube using kubectl
-                bat 'kubectl apply -f app-deployment.yaml' // Adjust path as needed
-                bat 'kubectl apply -f app-service.yaml' // Adjust path as needed
-
+            echo 'Deploying to Kubernetes...'
+            bat 'kubectl apply -f app-deployment.yaml'
+            bat 'kubectl apply -f app-service.yaml'
         }
- echo 'Deployment to Minikube was successful!'
-    }catch(e){
+
+        echo 'Deployment to Minikube was successful!'
+    } catch (e) {
         echo "in catch"
         currentBuild.result = "FAILED"
+        echo "Error: ${e.message}"
         notifyBuild(currentBuild.result)
         throw e
-
-    }finally{
+    } finally {
         echo "in finally"
-
     }
 }
 
-def notifyBuild(String buildStatus = 'STARTED'){
-
-// build status of null means successful
-    buildStatus =  buildStatus ?: 'SUCCESSFUL'
-    // Default values
+def notifyBuild(String buildStatus = 'STARTED') {
+    buildStatus = buildStatus ?: 'SUCCESSFUL'
     def colorName = 'RED'
     def colorCode = '#FF0000'
     def now = new Date()
-    // message
     def subject = "${buildStatus}, Job: ${env.JOB_NAME} FRONTEND - Deployment Sequence: [${env.BUILD_NUMBER}] "
     def summary = "${subject} - Check On: (${env.BUILD_URL}) - Time: ${now}"
-    def subject_email = "Spring boot Deployment"
+    def subject_email = "Spring Boot Deployment"
     def details = """<p>${buildStatus} JOB </p>
     <p>Job: ${env.JOB_NAME} - Deployment Sequence: [${env.BUILD_NUMBER}] - Time: ${now}</p>
     <p>Check console output at "<a href="${env.BUILD_URL}">${env.JOB_NAME}</a>"</p>"""
 
-
     // Email notification
-    emailext (
-            to: "rinkulsharma123@gmail.com",
-            subject: subject_email,
-            body: details,
-
+    emailext(
+        to: "rinkulsharma123@gmail.com",
+        subject: subject_email,
+        body: details,
     )
 }
