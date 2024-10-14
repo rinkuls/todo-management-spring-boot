@@ -21,14 +21,14 @@ node {
                          dockerImage = docker.build("todo-management-spring-boot:${env.BUILD_NUMBER}")
                   }
 
-                  stage('Deploy docker'){
-                          echo "Docker Image Tag Name: ${dockerImageTag}"
-                          bat  "docker stop DB-Application || true"
-                          bat  " docker rm DB-Application || true"
-                          echo "removed successful"
-                          bat  "docker run --name DB-Application -d -p 8781:8781 DB-Application:${env.BUILD_NUMBER}"
-                           echo "run successful"
-                  }
+      stage('Deploy docker'){
+              echo "Docker Image Tag Name: ${dockerImageTag}"
+             // bat  "docker stop db-application || true"
+              //bat  " docker rm db-application || true"
+              echo "removed successful"
+              bat  "docker run --name db-application -d -p 8781:8781 db-application:${env.BUILD_NUMBER}"
+               echo "run successful"
+      }
 
 
 
