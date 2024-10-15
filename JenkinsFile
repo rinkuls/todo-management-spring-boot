@@ -1,8 +1,6 @@
 node {
     def WORKSPACE = "/var/lib/jenkins/workspace/todo-management-spring-boot"
-    // Ensure BUILD_NUMBER is available and set a default if not
-    def buildNumber =  "latest"
-     //def buildNumber = env.BUILD_NUMBER ?: '0'
+    def buildNumber = env.BUILD_NUMBER ?: '0'
     def dockerImageTag = "todo-management-spring-boot:${buildNumber}"
 
     try {
@@ -17,59 +15,7 @@ node {
         stage('Build') {
             bat "mvn clean install"
         }
-
-        // Build Docker image
-        stage('Build Docker') {
-            // Set Docker environment to Minikube based on the operating system
-            if (isUnix()) {
-                // For Linux/macOS
-                sh 'eval $(minikube docker-env)' // Configure Docker CLI to use Minikube
-            } else {
-                // For Windows (CMD)
-                bat '''
-                @echo off
-                FOR /F "tokens=*" %%i IN ('minikube docker-env --shell cmd') DO @call %%i
-                '''
-            }
-
-            // Verify if the Docker environment is set correctly
-            echo "Current Docker context:"
-            if (isUnix()) {
-                sh 'docker context ls'
-            } else {
-                bat 'docker context ls'
-            }
-
-            echo "Docker Image Tag Name: ${dockerImageTag}"
-
-            // Build the Docker image with the specific tag
-            def dockerImage = docker.build(dockerImageTag)
-
-            // Verify the image is built correctly
-            echo "Checking available Docker images in Minikube..."
-            if (isUnix()) {
-                sh 'docker images' // For Unix-based systems
-            } else {
-                bat 'docker images' // For Windows
-            }
-        }
-
-        // Verify if image exists before deploying
-        stage('Verify Image') {
-            echo 'Verifying if Docker image exists in Minikube...'
-            if (isUnix()) {
-                def imageCheck = sh(script: "docker images -q ${dockerImageTag}", returnStdout: true).trim()
-                if (!imageCheck) {
-                    error "Docker image ${dockerImageTag} not found in Minikube!"
-                }
-            } else {
-                def imageCheck = bat(script: "docker images -q ${dockerImageTag}", returnStdout: true).trim()
-                if (!imageCheck) {
-                    error "Docker image ${dockerImageTag} not found in Minikube!"
-                }
-            }
-        }
-  /* here main benifit with k8s is we dont need to stop and remove container
+/* here main benifit with k8s is we dont need to stop and remove container
            stage('Build docker image') {
                                    dockerImage = docker.build("todo-management-spring-boot:${env.BUILD_NUMBER}")
                             }*/
@@ -96,9 +42,54 @@ node {
                bat  "docker-compose -f docker-compose.yml up -d"
                echo "composed successful"
            } */
+        // Build Docker image
+        stage('Build Docker') {
+            echo "Setting Minikube Docker environment for Windows"
+            bat '''
+            @echo off
+            FOR /F "tokens=*" %%i IN ('minikube docker-env --shell cmd') DO @call %%i
+            '''
+
+            // Verify if the Docker environment is set correctly
+            echo "Verifying Minikube Docker environment..."
+            bat 'docker context ls' // Check Docker context in Windows
+
+            // Ensure Minikube Docker daemon is being used
+            def dockerEnv = bat(script: 'echo %DOCKER_HOST%', returnStdout: true).trim()
+            if (!dockerEnv.contains('tcp://192.168')) {
+                error "Minikube Docker environment is not set! Please verify Minikube is running."
+            } else {
+                echo "Minikube Docker environment verified: ${dockerEnv}"
+            }
+
+            // Build the Docker image with the specific tag
+            echo "Docker Image Tag Name: ${dockerImageTag}"
+            def dockerImage = docker.build(dockerImageTag)
+
+            // Verify the image is built correctly
+            echo "Checking available Docker images in Minikube..."
+            bat 'docker images' // For Windows to list Docker images
+        }
+
+        // Verify if image exists before deploying
+        stage('Verify Image') {
+            echo 'Verifying if Docker image exists in Minikube...'
+            def imageCheck = bat(script: "docker images -q ${dockerImageTag}", returnStdout: true).trim()
+            if (!imageCheck) {
+                error "Docker image ${dockerImageTag} not found in Minikube!"
+            }
+        }
+
         // Deploy to Kubernetes
         stage('kubectl deploy') {
             echo 'Deploying to Kubernetes...'
+
+            // Ensure Minikube context is set for Kubernetes
+            bat 'kubectl config use-context minikube'
+
+            // Replace the image tag in the deployment YAML with the correct BUILD_NUMBER
+            bat "powershell -Command \"(Get-Content app-deployment.yaml) -replace 'todo-management-spring-boot:latest', 'todo-management-spring-boot:${buildNumber}' | Set-Content app-deployment.yaml\""
+
             // Apply the deployment and service configuration files
             bat 'kubectl apply -f app-deployment.yaml'
             bat 'kubectl apply -f app-service.yaml'

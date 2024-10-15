@@ -20,7 +20,7 @@ spec:
         io.kompose.service: todo-management-spring-boot  # Updated label
     spec:
       containers:
-        - image: todo-management-spring-boot:latest  # Updated image with build number
+        - image: todo-management-spring-boot:${BUILD_NUMBER}  # Use dynamic build number for the image
           name: todo-management-spring-boot  # Updated container name for consistency
           ports:
             - containerPort: 8780
