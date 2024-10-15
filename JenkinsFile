@@ -15,6 +15,22 @@ node {
         stage('Build') {
             bat "mvn clean install"
         }
+
+        stage('Set Minikube Docker Environment') {
+                    echo 'Setting Minikube Docker environment for Windows'
+                    bat '''
+                        FOR /F "tokens=*" %%i IN ('minikube docker-env --shell cmd') DO @call %%i
+                    '''
+
+                    echo 'Verifying Minikube Docker environment...'
+                    bat 'docker context ls'
+
+                    // Verify that Minikube Docker environment is set
+                    def dockerContext = bat(script: 'docker context ls', returnStdout: true)
+                    if (!dockerContext.contains('minikube')) {
+                        error 'Minikube Docker environment is not set! Please verify Minikube is running.'
+                    }
+                }
 /* here main benifit with k8s is we dont need to stop and remove container
            stage('Build docker image') {
                                    dockerImage = docker.build("todo-management-spring-boot:${env.BUILD_NUMBER}")
