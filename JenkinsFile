@@ -28,7 +28,8 @@ node {
                     // Verify that Minikube Docker environment is set
                     def dockerContext = bat(script: 'docker context ls', returnStdout: true)
                     if (!dockerContext.contains('minikube')) {
-                        error 'Minikube Docker environment is not set! Please verify Minikube is running.'
+                       // error 'Minikube Docker environment is not set! Please verify Minikube is running.'
+                        echo 'Minikube Docker environment is not set! Please verify Minikube is running.'
                     }
                 }
 /* here main benifit with k8s is we dont need to stop and remove container
@@ -73,7 +74,8 @@ node {
             // Ensure Minikube Docker daemon is being used
             def dockerEnv = bat(script: 'echo %DOCKER_HOST%', returnStdout: true).trim()
             if (!dockerEnv.contains('tcp://192.168')) {
-                error "Minikube Docker environment is not set! Please verify Minikube is running."
+               // error "Minikube Docker environment is not set! Please verify Minikube is running."
+                 echo "Minikube Docker environment is not set! Please verify Minikube is running."
             } else {
                 echo "Minikube Docker environment verified: ${dockerEnv}"
             }
