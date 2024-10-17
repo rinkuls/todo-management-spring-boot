@@ -5,16 +5,16 @@ metadata:
     kompose.cmd: kompose convert
     kompose.version: 1.31.2 (a92241f79)
   labels:
-    io.kompose.service: todo-management-for-mavenrepo
-  name: todo-management-for-mavenrepo
+    io.kompose.service: todo-management-spring-boot  # Updated label
+  name: todo-management-spring-boot  # Updated name
 spec:
-  type: NodePort
+  type: NodePort  # Changed to NodePort to allow external access
   ports:
-    - name: "http"
+    - name: "http"  # Updated name for clarity
       port: 8780
       targetPort: 8780
       nodePort: 30001  # Optional: specify a NodePort for external access
   selector:
-    io.kompose.service: todo-management-for-mavenrepo
+    io.kompose.service: todo-management-spring-boot  # Updated selector
 status:
   loadBalancer: {}

@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.todo.springboot</groupId>
-    <artifactId>todo-management-for-mavenrepo</artifactId>
+    <artifactId>todo-management-spring-boot</artifactId>
     <version>1.0.1-SNAPSHOT</version>
-    <name>todo-management-for-mavenrepo</name>
-    <description>Demo project for todo-management-for-mavenrepo</description>
+    <name>todo-management-spring-boot</name>
+    <description>Demo project for todo-management Spring Boot</description>
     <properties>
         <java.version>17</java.version>
     </properties>

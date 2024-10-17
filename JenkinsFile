@@ -1,12 +1,12 @@
 node {
-    def WORKSPACE = "/var/lib/jenkins/workspace/todo-management-for-mavenrepo"
+    def WORKSPACE = "/var/lib/jenkins/workspace/todo-management-spring-boot"
     def buildNumber = env.BUILD_NUMBER ?: '0'
-    def dockerImageTag = "rinkuls/todo-management-for-mavenrepo:${buildNumber}"
+    def dockerImageTag = "todo-management-spring-boot:${buildNumber}"
 
     try {
         // Stage to clone the repository
         stage('Clone Repo') {
-            git url: 'https://github.com/rinkuls/todo-management-for-mavenrepo.git',
+            git url: 'https://github.com/rinkuls/todo-management-spring-boot.git',
                 credentialsId: 'springdeploy-user',
                 branch: 'main'
         }
@@ -16,37 +16,97 @@ node {
             bat "mvn clean install"
         }
 
-        // Build Docker image
-        stage('Build Docker Image') {
-            echo "Building Docker image with tag: ${dockerImageTag}"
+        stage('Set Minikube Docker Environment') {
+                    echo 'Setting Minikube Docker environment for Windows'
+                    bat '''
+                        FOR /F "tokens=*" %%i IN ('minikube docker-env --shell cmd') DO @call %%i
+                    '''
 
-            // Build the Docker image
+                    echo 'Verifying Minikube Docker environment...'
+                    bat 'docker context ls'
+
+                    // Verify that Minikube Docker environment is set
+                    def dockerContext = bat(script: 'docker context ls', returnStdout: true)
+                    if (!dockerContext.contains('minikube')) {
+                       // error 'Minikube Docker environment is not set! Please verify Minikube is running.'
+                        echo 'Minikube Docker environment is not set! Please verify Minikube is running.'
+                    }
+                }
+/* here main benifit with k8s is we dont need to stop and remove container
+           stage('Build docker image') {
+                                   dockerImage = docker.build("todo-management-spring-boot:${env.BUILD_NUMBER}")
+                            }*/
+
+
+
+  /* here main benifit with k8s is we dont need to stop and remove container
+          stage('Deploy docker'){
+                   echo "Docker Image Tag Name: ${dockerImageTag}"
+                   bat  "docker stop db-application || true"
+                   bat  " docker rm db-application || true"
+                   echo "removed successful"
+                   bat  "docker run --name db-application -d -p 8781:8781 todo-management-spring-boot:${env.BUILD_NUMBER}"
+                   echo "run successful"
+             }*/
+
+
+        /* can we used directly this stage and skip build and deploy separately but for learning purpose i did this
+         stage('Docker Compose Up') {
+                bat 'docker --version'
+               bat  "docker stop DB-Application || true"
+               bat  " docker rm DB-Application || true"
+               echo "removed successful"
+               bat  "docker-compose -f docker-compose.yml up -d"
+               echo "composed successful"
+           } */
+        // Build Docker image
+        stage('Build Docker') {
+            echo "Setting Minikube Docker environment for Windows"
+            bat '''
+            @echo off
+            FOR /F "tokens=*" %%i IN ('minikube docker-env --shell cmd') DO @call %%i
+            '''
+
+            // Verify if the Docker environment is set correctly
+            echo "Verifying Minikube Docker environment..."
+            bat 'docker context ls' // Check Docker context in Windows
+
+            // Ensure Minikube Docker daemon is being used
+            def dockerEnv = bat(script: 'echo %DOCKER_HOST%', returnStdout: true).trim()
+            if (!dockerEnv.contains('tcp://192.168')) {
+               // error "Minikube Docker environment is not set! Please verify Minikube is running."
+                 echo "Minikube Docker environment is not set! Please verify Minikube is running."
+            } else {
+                echo "Minikube Docker environment verified: ${dockerEnv}"
+            }
+
+            // Build the Docker image with the specific tag
+            echo "Docker Image Tag Name: ${dockerImageTag}"
             def dockerImage = docker.build(dockerImageTag)
 
             // Verify the image is built correctly
-            echo "Docker Image built successfully: ${dockerImageTag}"
+            echo "Checking available Docker images in Minikube..."
+            bat 'docker images' // For Windows to list Docker images
         }
 
-        // Push Docker Image to Docker Hub
-        stage('Push Docker Image to Docker Hub') {
-            withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials-id', passwordVariable: 'DOCKER_HUB_PASSWORD', usernameVariable: 'DOCKER_HUB_USERNAME')]) {
-                bat  '''
-                    echo %DOCKER_HUB_PASSWORD% | docker login -u %DOCKER_HUB_USERNAME% --password-stdin
-                '''
-                // Push Docker image to Docker Hub
-                bat  "docker push ${dockerImageTag}"
+        // Verify if image exists before deploying
+        stage('Verify Image') {
+            echo 'Verifying if Docker image exists in Minikube...'
+            def imageCheck = bat(script: "docker images -q ${dockerImageTag}", returnStdout: true).trim()
+            if (!imageCheck) {
+                error "Docker image ${dockerImageTag} not found in Minikube!"
             }
         }
 
-        // Deploy to Kubernetes (Minikube)
-        stage('Deploy to Minikube') {
-            echo "Deploying to Kubernetes with Docker Hub image: ${dockerImageTag}"
+        // Deploy to Kubernetes
+        stage('kubectl deploy') {
+            echo 'Deploying to Kubernetes...'
 
             // Ensure Minikube context is set for Kubernetes
             bat 'kubectl config use-context minikube'
 
             // Replace the image tag in the deployment YAML with the correct BUILD_NUMBER
-            bat "powershell -Command \"(Get-Content app-deployment.yaml) -replace 'rinkuls/todo-management-for-mavenrepo:latest', 'rinkuls/todo-management-for-mavenrepo:${buildNumber}' | Set-Content app-deployment.yaml\""
+            bat "powershell -Command \"(Get-Content app-deployment.yaml) -replace 'todo-management-spring-boot:latest', 'todo-management-spring-boot:${buildNumber}' | Set-Content app-deployment.yaml\""
 
             // Apply the deployment and service configuration files
             bat 'kubectl apply -f app-deployment.yaml'
@@ -55,8 +115,9 @@ node {
 
         echo 'Deployment to Minikube was successful!'
     } catch (e) {
-        echo "Error occurred: ${e.message}"
+        echo "in catch"
         currentBuild.result = "FAILED"
+        echo "Error: ${e.message}"
         notifyBuild(currentBuild.result)
         throw e
     } finally {
@@ -64,7 +125,6 @@ node {
     }
 }
 
-// Email notification function
 def notifyBuild(String buildStatus = 'STARTED') {
     buildStatus = buildStatus ?: 'SUCCESSFUL'
     def now = new Date()
