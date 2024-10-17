@@ -5,25 +5,24 @@ metadata:
     kompose.cmd: kompose convert
     kompose.version: 1.31.2 (a92241f79)
   labels:
-    io.kompose.service: todo-management-spring-boot  # Updated label
-  name: todo-management-spring-boot  # Updated name
+    io.kompose.service: todo-management-for-mavenrepo
+  name: todo-management-for-mavenrepo
 spec:
   replicas: 1
   selector:
     matchLabels:
-      io.kompose.service: todo-management-spring-boot  # Updated label
+      io.kompose.service: todo-management-for-mavenrepo
   strategy: {}
   template:
     metadata:
       labels:
-        io.kompose.network/custom-network: "true"
-        io.kompose.service: todo-management-spring-boot  # Updated label
+        io.kompose.service: todo-management-for-mavenrepo
     spec:
       containers:
-        - image: todo-management-spring-boot:${BUILD_NUMBER}  # Use dynamic build number for the image
-          name: todo-management-spring-boot  # Updated container name for consistency
+        - image: rinkuls/todo-management-for-mavenrepo:${BUILD_NUMBER}  # Updated to use the dynamic image tag
+          name: todo-management-for-mavenrepo
           ports:
             - containerPort: 8780
               protocol: TCP
-          resources: {}  # Resource requests and limits can be specified here if needed
+          resources: {}
       restartPolicy: Always
