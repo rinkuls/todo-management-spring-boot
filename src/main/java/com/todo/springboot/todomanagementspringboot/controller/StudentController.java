@@ -22,7 +22,7 @@ import static org.hibernate.tool.schema.SchemaToolingLogging.LOGGER;
 @Api(tags = "Student Controller", value = "Its an API for Student Application")
 public class StudentController {
     @Autowired
-    private  StudentServiceImpl studentService;
+    private StudentServiceImpl studentService;
 
 
     @PostMapping(value = "/add", produces = "application/json")
@@ -30,11 +30,11 @@ public class StudentController {
     @ApiResponses({@ApiResponse(code = 200, message = "Successful response"), @ApiResponse(code = 500, message = "Application Down"), @ApiResponse(code = 400, message = "bad request")})
     public ResponseEntity<String> storeToStudent(@RequestBody Student student) {
         LOGGER.info("hello i reached to controller and now i will go to service  " + student + " received");
-       var retVal= studentService.storeToStudent(student);
+        var retVal = studentService.storeToStudent(student);
         LOGGER.info("I have saved  to DB now you can enjoy  " + student + " saving to DB");
 
         var ret = retVal != null ? new ResponseEntity<>("Saved Successfully", HttpStatus.OK)
-               : new ResponseEntity<>("Not Saved Successfully", HttpStatus.OK);
+                : new ResponseEntity<>("Not Saved Successfully", HttpStatus.OK);
         return ret;
     }
 

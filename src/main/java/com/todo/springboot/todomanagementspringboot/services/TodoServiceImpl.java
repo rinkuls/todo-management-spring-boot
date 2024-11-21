@@ -17,7 +17,6 @@ public class TodoServiceImpl {
     private final TodoRepository todoRepository;
 
 
-
     public List<Todo> getTodoList() {
         return todoRepository.findAll();
     }
